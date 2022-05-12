@@ -21,7 +21,7 @@ After the student worked with the query structure below, he shared with me real 
 making this query more generic. I did that and his supervisor allowed him to use it to query his operations database.
 
 I can't show the query code because I agreed not to make it public, but essence of it is that the "pivot" query 
-has been made more generic so that event time parameters can be pivoted along with thos shown below. 
+has been made more generic so that event time parameters can be pivoted along with those shown below. 
 
 The student tested the queries  multiple times and compared them to hand calculations to test for accuracy and consistency.
 **/

@@ -1,0 +1,10 @@
+-- Create a books table with favorite books and ratings
+
+-- create the table
+CREATE TABLE books(id INTEGER PRIMARY KEY, name TEXT, rating REAL); 
+
+-- insert some books
+INSERT INTO books VALUES(1, 'Jack Reacher - Never Look Back', 9.5), (2, 'Memory Man - Book 4', 8.9), (3, 'To Kill a Mockingbird', 9.9);
+
+-- show all the data in the books table
+SELECT * FROM books;

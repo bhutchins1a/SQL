@@ -1,0 +1,528 @@
+/** Real life MySQL problem from Udemy student **/
+
+Time Duration calculation
+0 upvotes
+Kazi · Lecture 238 · 9 days ago
+I am trying to use MySQL to find out how long certain task is taking. Due to the way the database was built, the even type is in a different column and I think I have to use nested select. I am trying to find the time on Pre-trip_Sumbit and Pre_Trip_Start. The code I have returns an error and I think there is an issue either with the nested select or datediff that I am using.
+
+
+
+
+ SELECT ROUTE_NUM, TRUCK_NUM, 
+    DATEDIFF(
+    (select EVENT_TIME_LOCAL where EVENT_TYPE = 'VCR_PRE_TRIP_START') ,
+    (select EVENT_TIME_LOCAL where EVENT_TYPE = 'VCR_PRE_TRIP_SUBMIT')) as Time_Duration
+from ACTIVE_ROUTE_HEADER_HISTORY as arh
+inner join EVENT_HISTORY as eve on arh.PK_ACTIVE_ROUTE_HEADER_ID = eve.XPK_ACTIVE_ROUTE_HEADER_ID
+where ROUTE_DATE = '2022-03-17';
+15 replies
+
+Bob — Teaching Assistant
+0 upvotes
+9 days ago
+Hi, Kazi.
+
+I'm not sure I can help with this one because I don't have any idea about your table structures and data.
+
+Is the image above a single table or a set of joined tables?
+
+If that's a table, I'd probably pivot it so that everything would be on one line.
+
+What is the error you're getting?
+
+Bob
+
+KX
+Kazi
+0 upvotes
+9 days ago
+Hi Bob,
+
+This is a set of joined tables but the Event_Type and  Event_Time_Local are stored on the same table. I only need to Join the other table to get the truck number.
+
+
+
+The error I got was below:
+
+
+
+SQL Error [1064] [42000]: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'where EVENT_TYPE = 'VCR_PRE_TRIP_START'),
+    (select EVENT_TIME_LOCAL where EV' at line 3
+
+Bob — Teaching Assistant
+0 upvotes
+9 days ago
+Thanks, Kazi.
+
+Let's fix the syntax error first (or at least attempt to).
+
+The subqueries in the DATEDIFF function are missing a table name:
+
+(SELECT EVENT_TIME FROM table_name WHERE EVENT_TYPE = 'VCR_PRE_TRIP_START').
+
+You're missing the part that's in bold and italics.
+
+I still think it's going to choke because it appears to me that even though the Event_Type and Event_Time_Local are in the same table, they are on different rows and your DATEDIFF function will do something weird (probably). It my not have an error but I wouldn't trust the results.
+
+Add the FROM clause into the two subqueries and then let me know what happens.
+
+Bob
+
+P.S.: If EVENT_TIME_LOCAL is a TIMESTAMP datatype, use TIMESTAMPDIFF() instead of DATEDIFF().
+
+KX
+Kazi
+0 upvotes
+9 days ago
+Hi Bob,
+
+Apologize for the back and forth. With adding the From, it took care of the error message but it is taking forever to run even with being specific. Usually, this means I have something wrong in my query with our environment.
+
+Here is the query without the Datediff:
+
+select arh.ROUTE_NUM, arh.TRUCK_NUM, eve.EVENT_TIME_LOCAL, eve.EVENT_TYPE, eve.EVENT_DATE
+from ACTIVE_ROUTE_HEADER_HISTORY as arh
+inner join EVENT_HISTORY as eve 
+	on arh.PK_ACTIVE_ROUTE_HEADER_ID = eve.XPK_ACTIVE_ROUTE_HEADER_ID
+where arh.INFOPRO_DIV = '864'
+	and arh.ROUTE_DATE = '2022-03-17'
+	and (eve.EVENT_TYPE ='VCR_PRE_TRIP_START' or event_Type = 'VCR_PRE_TRIP_SUBMIT' or event_Type = 'VCR_Post_TRIP_SUBMIT' or event_Type = 'VCR_Post_TRIP_start')
+	and eve.EVENT_TYPE <> 'GPS'
+	and TRUCK_NUM = '1242'
+order by arh.ROUTE_NUM
+limit 100;
+
+
+The query above returns:
+
+
+
+
+The "EVENT_TIME_LOCAL" column is set to time as a data type:
+
+
+
+
+
+
+
+
+
+Bob — Teaching Assistant
+0 upvotes
+9 days ago
+Thanks, Kazi.
+
+Sorry for the delayed response but I've been working out for the past couple hours. We old men need to work out a lot so we don't get fatter than we already are! :)
+
+
+
+Let me ask a question or two about the query when it has the subqueries in it: Does the query run to completion or does it time out from the server? How many lines in the joined tables?
+
+If it runs slow but runs to completion, then we'd need to look at the slow query log to see if it can give us any hints. Unfortunately, that's something you'll need to discuss with your database administrator as that's outside my capability. If it times out, it could be that it's processing a lot of rows and just doesn't have time to process them all, or that the DATEDIFF() function is having some problems (which I already suspect it's having problems).
+
+How long does it take the query to run without the DATEDIFF()?
+
+You might consider using TIMEDIFF() instead of DATEDIFF() if you're doing math between TIME data types. TIME datatypes have no date component to them and I'm concerned the query is getting stuck there.
+
+I don't see anything inherently slow in the query above. You may be able to speed up the EVENT_TYPE check in the WHERE clause. Maybe use:
+
+     AND EVENT_TYPE IN ('VCR_PRE_TRIP_START', 'VCR_PRE_TRIP_SUBMIT', 'VCR_Post_TRIP_SUBMIT', 'VCR_Post_TRIP_start')
+
+but I can't say for certain that's going to make a huge difference.
+
+I think the biggest challenge is trying to calculate the date (time) difference when they're on different rows.
+
+One thing you could consider is to create a temporary table from the query above, then pivot it so that once the table is pivoted, it would look like this:
+
+
+
+     Route_Num      Truck_Num       VCR_PRE_TRIP_START    VCR_PRE_TRIP_SUBMIT    VCR_Post_TRIP_start     VCR_Post_TRIP_SUBMIT
+
+            4101                    1242                         04:29:16                             04:30:42                                  15:10:17                                  15:12:23
+
+
+
+Then your query becomes very straightforward.
+
+SELECT ROUTE_NUM, TRUCK_NUM, TIMEDIFF(VCR_PRE_TRIP_SUBMIT, VCR_PRE_TRIP_START) AS Start_Diff, TIMEDIFF(VCR_Post_TRIP_SUBMIT, VCR_Post_TRIP_start) AS End_Diff
+
+FROM name_of_temporary_pivoted_table
+
+WHERE conditions /*need to be sure these are in the pivoted table, too, like stuff from the ACTIVE_ROUTE_HISTORY table (if you need it).
+
+
+
+Those are some things to look at.
+
+Bob
+
+
+
+KX
+Kazi
+0 upvotes
+9 days ago
+Hi Bob,
+
+That reminds me that I should maybe get up and walk around a bit.
+
+There is a new development to this question but to answer your questions:
+
+
+
+1. The query runs for 2 seconds if without the DATEDIFF or TIMEDIFF. Especially, if I am only getting it from one truck number on one route.
+
+2. This database is in production so I assume it is massive. So I have to be extra careful. That is why I always have LIMIT just in case.
+
+3. I only have read-only access so I assume I won't be able to create a temp table. However, I do want to look into how to pivot the table. Maybe another time.
+
+
+
+New development. With TIMEDIFF in my query, here is a new error I am getting:
+
+SQL Error [1242] [21000]: Subquery returns more than 1 row
+Do I now need to join my subquery? This is getting a little too complicated^^
+
+
+Bob — Teaching Assistant
+0 upvotes
+9 days ago
+Hi, Kazi.
+
+Yeah, always good to take frequent breaks when working on this stuff or you'll drive yourself crazy.
+
+With respect to answer number one, 2 seconds is reasonable if there are a lot of rows in the tables.
+
+Production database --> gotta be careful. That I get.
+
+I should have seen the subquery issue right away - I was more concerned about trying to do calculations on two different rows in the same SELECT query. My bad! But yes, those subqueries will return more than one row.
+
+Let me play with this overnight and I'll try to come up with a way you can do this more easily. You might have to get your boss to talk to the database administrator to give you CREATE TEMPORARY TABLES privileges, though. You can't really do any damage with CREATE TEMPORARY TABLES because your INSERT and UPDATE privileges are limited to temporary tables and they go away as soon as your connection has ended.
+
+A JOIN isn't going to fix the main problem that the data of interest are on different rows of the same table.
+
+Bob
+
+
+
+KX
+Kazi
+0 upvotes
+9 days ago
+Thank you so much Bob!
+
+The ultimate goal here is to figure out the time used on those events based on each truck, route, and division. I should be able to figure them out as long as I have the timediff/datediff fixed.
+
+
+Bob — Teaching Assistant
+0 upvotes
+9 days ago
+Kazi, Here's some food for thought.
+
+I created a database with a table similar to your JOINed table and inserted the same data as what was in the image your provided for the one route and truck.
+
+Below is the code I used to "pivot" the table, then select the route number, truck number, date and pre and post start and submit times.
+
+You'll have to modify it to meet your needs but I think it gives you enough to work with in terms of creating a temporary table. Here's how to do that with the data you provided:
+
+
+
+CREATE TEMPORARY TABLE temp_table
+select arh.ROUTE_NUM, arh.TRUCK_NUM, eve.EVENT_TIME_LOCAL, eve.EVENT_TYPE, eve.EVENT_DATE
+from ACTIVE_ROUTE_HEADER_HISTORY as arh
+inner join EVENT_HISTORY as eve
+ on arh.PK_ACTIVE_ROUTE_HEADER_ID = eve.XPK_ACTIVE_ROUTE_HEADER_ID
+where arh.INFOPRO_DIV = '864'
+and arh.ROUTE_DATE = '2022-03-17'
+and (eve.EVENT_TYPE ='VCR_PRE_TRIP_START' or event_Type = 'VCR_PRE_TRIP_SUBMIT' or event_Type = 'VCR_Post_TRIP_SUBMIT' or event_Type = 'VCR_Post_TRIP_start')
+and eve.EVENT_TYPE <> 'GPS'
+and TRUCK_NUM = '1242'
+order by arh.ROUTE_NUM
+limit 100;
+
+
+Everything below is in terms of the `truck_routes` table instead of the `temp_table` as I called it above, but it's the same thing.
+
+
+
+DROP DATABASE IF EXISTS trucking;
+ 
+CREATE DATABASE trucking;
+ 
+USE trucking;
+ 
+#below table is equivalent to `temp_table` created above
+CREATE TABLE truck_routes
+(
+id INT AUTO_INCREMENT PRIMARY KEY,
+route_num INT,
+truck_num INT,
+event_time_local TIME,
+event_type VARCHAR(25),
+event_date DATETIME
+);
+ 
+# insert the values from your main query
+INSERT INTO truck_routes(route_num, truck_num, event_time_local, event_type, event_date)
+VALUES
+(4101, 1242, '04:29:16', 'VCR_PRE_TRIP_START', '2022-03-17 10:29:16'),
+(4101, 1242, '04:30:42', 'VCR_PRE_TRIP_SUBMIT', '2022-03-17 10:30:42'),
+(4101, 1242, '15:10:17', 'VCR_POST_TRIP_START', '2022-03-17 21:10:17'),
+(4101, 1242, '15:12:23', 'VCR_POST_TRIP_SUBMIT', '2022-03-17 21:12:23');
+ 
+ 
+# The following is the "pivot" query and it comes from the table you created with the JOINs (the one I called the "temporary table" - i actually
+# created a table called `truck_routes` just so I could show you a demonstration):
+SELECT route_num, truck_num, DATE(event_date) as date,
+MAX(CASE WHEN event_type = 'VCR_PRE_TRIP_START' THEN event_time_local ELSE '' END) AS 'VCR_PRE_TRIP_START',
+MAX(CASE WHEN event_type = 'VCR_PRE_TRIP_SUBMIT' THEN event_time_local ELSE '' END) AS 'VCR_PRE_TRIP_SUBMIT',
+MAX(CASE WHEN event_type = 'VCR_POST_TRIP_START' THEN event_time_local ELSE '' END) AS 'VCR_POST_TRIP_START',
+MAX(CASE WHEN event_type = 'VCR_POST_TRIP_SUBMIT' THEN event_time_local ELSE '' END) AS 'VCR_POST_TRIP_SUBMIT'
+FROM truck_routes
+GROUP BY route_num, truck_num, date;
+ 
+#This query will find the time difference between the pre-trip start and submit, and the post-trip start and submit
+SELECT 
+    route_num,
+    truck_num,
+    TIMEDIFF(VCR_PRE_TRIP_SUBMIT, VCR_PRE_TRIP_START) AS Start_Diff,
+    TIMEDIFF(VCR_POST_TRIP_SUBMIT, VCR_POST_TRIP_START) AS Post_Diff
+FROM
+(
+SELECT route_num, truck_num, DATE(event_date) as date,
+MAX(CASE WHEN event_type = 'VCR_PRE_TRIP_START' THEN event_time_local ELSE '' END) AS 'VCR_PRE_TRIP_START',
+MAX(CASE WHEN event_type = 'VCR_PRE_TRIP_SUBMIT' THEN event_time_local ELSE '' END) AS 'VCR_PRE_TRIP_SUBMIT',
+MAX(CASE WHEN event_type = 'VCR_POST_TRIP_START' THEN event_time_local ELSE '' END) AS 'VCR_POST_TRIP_START',
+MAX(CASE WHEN event_type = 'VCR_POST_TRIP_SUBMIT' THEN event_time_local ELSE '' END) AS 'VCR_POST_TRIP_SUBMIT'
+FROM truck_routes
+GROUP BY route_num, truck_num, date
+) AS temp;
+
+
+The table query produces the results below:
+
+mysql> SELECT * FROM truck_routes;
++----+-----------+-----------+------------------+----------------------+---------------------+
+| id | route_num | truck_num | event_time_local | event_type           | event_date          |
++----+-----------+-----------+------------------+----------------------+---------------------+
+|  1 |      4101 |      1242 | 04:29:16         | VCR_PRE_TRIP_START   | 2022-03-17 10:29:16 |
+|  2 |      4101 |      1242 | 04:30:42         | VCR_PRE_TRIP_SUBMIT  | 2022-03-17 10:30:42 |
+|  3 |      4101 |      1242 | 15:10:17         | VCR_POST_TRIP_START  | 2022-03-17 21:10:17 |
+|  4 |      4101 |      1242 | 15:12:23         | VCR_POST_TRIP_SUBMIT | 2022-03-17 21:12:23 |
++----+-----------+-----------+------------------+----------------------+---------------------+
+The above is the exact table you produced from the query.
+
+Now here's the query to pivot the table above and put everything on one line:
+
+
+
+mysql> SELECT route_num, truck_num, DATE(event_date) as date,
+    -> MAX(CASE WHEN event_type = 'VCR_PRE_TRIP_START' THEN event_time_local ELSE '' END) AS 'VCR_PRE_TRIP_START',
+    -> MAX(CASE WHEN event_type = 'VCR_PRE_TRIP_SUBMIT' THEN event_time_local ELSE '' END) AS 'VCR_PRE_TRIP_SUBMIT',
+    -> MAX(CASE WHEN event_type = 'VCR_POST_TRIP_START' THEN event_time_local ELSE '' END) AS 'VCR_POST_TRIP_START',
+    -> MAX(CASE WHEN event_type = 'VCR_POST_TRIP_SUBMIT' THEN event_time_local ELSE '' END) AS 'VCR_POST_TRIP_SUBMIT'
+    -> FROM truck_routes
+    -> GROUP BY route_num, truck_num, date;
++-----------+-----------+------------+--------------------+---------------------+---------------------+----------------------+
+| route_num | truck_num | date       | VCR_PRE_TRIP_START | VCR_PRE_TRIP_SUBMIT | VCR_POST_TRIP_START | VCR_POST_TRIP_SUBMIT |
++-----------+-----------+------------+--------------------+---------------------+---------------------+----------------------+
+|      4101 |      1242 | 2022-03-17 | 04:29:16           | 04:30:42            | 15:10:17            | 15:12:23             |
++-----------+-----------+------------+--------------------+---------------------+---------------------+----------------------+
+
+
+Now you can calculate the time differences pre and post:
+
+
+
+mysql> SELECT
+    -> route_num,
+    -> truck_num,
+    -> TIMEDIFF(VCR_PRE_TRIP_SUBMIT, VCR_PRE_TRIP_START) AS Start_Diff,
+    -> TIMEDIFF(VCR_POST_TRIP_SUBMIT, VCR_POST_TRIP_START) AS Post_Diff
+    -> FROM
+    -> (
+    -> SELECT route_num, truck_num, DATE(event_date) as date,
+    -> MAX(CASE WHEN event_type = 'VCR_PRE_TRIP_START' THEN event_time_local ELSE '' END) AS 'VCR_PRE_TRIP_START',
+    -> MAX(CASE WHEN event_type = 'VCR_PRE_TRIP_SUBMIT' THEN event_time_local ELSE '' END) AS 'VCR_PRE_TRIP_SUBMIT',
+    -> MAX(CASE WHEN event_type = 'VCR_POST_TRIP_START' THEN event_time_local ELSE '' END) AS 'VCR_POST_TRIP_START',
+    -> MAX(CASE WHEN event_type = 'VCR_POST_TRIP_SUBMIT' THEN event_time_local ELSE '' END) AS 'VCR_POST_TRIP_SUBMIT'
+    -> FROM truck_routes
+    -> GROUP BY route_num, truck_num, date
+    -> ) AS temp;
++-----------+-----------+-----------------+-----------------+
+| route_num | truck_num | Start_Diff      | Post_Diff       |
++-----------+-----------+-----------------+-----------------+
+|      4101 |      1242 | 00:01:26.000000 | 00:02:06.000000 |
++-----------+-----------+-----------------+-----------------+
+
+
+Now, I don't know if that's what you want to really calculate, but I've provided it to show you how to approach the problem.
+
+Let me know if you have any questions.
+
+Bob
+
+KX
+Kazi
+0 upvotes
+9 days ago
+Bob,
+
+This is impressive!! It works!!
+
+The workaround I had to do are below:
+
+1. It does not seems I have the access to create temp table so I reactivated my Goorm account. Created the database and table.
+
+2. Run the query from my original database and export the data.
+
+3. INSERT them into Goorm and pivot to get the final numbers.
+
+
+
+My final question(hopefully) is how do I export the data below from Goorm?
+
++-----------+-----------+-----------------+-----------------+
+
+| route_num | truck_num | Start_Diff | Post_Diff |
+
++-----------+-----------+-----------------+-----------------+
+
+| 4101 | 1242 | 00:01:26.000000 | 00:02:06.000000 |
+
++-----------+-----------+-----------------+-----------------+
+
+
+
+
+Bob — Teaching Assistant
+0 upvotes
+9 days ago
+Hi, Kazi.
+
+So glad it works! Wish you had CREATE TEMPORARY TABLES privileges but maybe you can get around them.
+
+To export the data from goormIDE, I'd say the best thing is to save the query results to a .csv file then download it from goorm.
+
+The server runs with what's called the --secure-file-priv option enabled, meaning you'll need to output the file to the correct directory. On Linux systems, the directory is usually /var/lib/mysql-files, but you can find out by going into the command line client (mysql> prompt) and entering SHOW VARIABLES LIKE 'secure_file_priv'; .
+
+Once you know the secure directory, just use it in the query.
+
+The syntax is SELECT col1, col2, col3... INTO OUTFILE '/var/lib/mysql-files/file_name.csv' [options] FROM the query.
+
+For our example, the query below will save the query results into a file called 'trucking_results.csv' in the /var/lib/mysql-files/ directory.
+
+
+
+SELECT 'Route_Num', 'Truck_Num', 'Start_Diff', 'Post_Diff'
+UNION ALL
+SELECT 
+    route_num,
+    truck_num,
+    TIMEDIFF(VCR_PRE_TRIP_SUBMIT, VCR_PRE_TRIP_START) AS Start_Diff,
+    TIMEDIFF(VCR_POST_TRIP_SUBMIT, VCR_POST_TRIP_START) AS Post_Diff
+INTO OUTFILE '/var/lib/mysql-files/trucking_results.csv'
+FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
+LINES TERMINATED BY '\n'
+FROM
+(
+SELECT route_num, truck_num, DATE(event_date) as date,
+MAX(CASE WHEN event_type = 'VCR_PRE_TRIP_START' THEN event_time_local ELSE '' END) AS 'VCR_PRE_TRIP_START',
+MAX(CASE WHEN event_type = 'VCR_PRE_TRIP_SUBMIT' THEN event_time_local ELSE '' END) AS 'VCR_PRE_TRIP_SUBMIT',
+MAX(CASE WHEN event_type = 'VCR_POST_TRIP_START' THEN event_time_local ELSE '' END) AS 'VCR_POST_TRIP_START',
+MAX(CASE WHEN event_type = 'VCR_POST_TRIP_SUBMIT' THEN event_time_local ELSE '' END) AS 'VCR_POST_TRIP_SUBMIT'
+FROM truck_routes
+GROUP BY route_num, truck_num, date
+) AS temp;
+The UNION ALL statement needs to be used with the first SELECT query so that the column labels can be inserted into the .csv file, too.
+
+Once you've completed the query, exit the MySQL command line (or open a new terminal window) and enter the command:
+
+     mv /var/lib/mysql-files/trucking_results.csv trucking_results.csv
+
+This will move the file from the /var/lib/mysql-files directory into the current terminal's directory.
+
+Then you can download the file to your computer by right-clicking on the file name (in the directory pane of goormIDE) and selecting "Export" down toward the bottom of the context menu.
+
+That should do it.
+
+Let me know if you have additional questions.
+
+Bob
+
+KX
+Kazi
+0 upvotes
+8 days ago
+Hi Bob,
+
+We finally made it! Very impressive work and I learned a lot from you. Thank you again and I will talk to you soon.
+
+
+Bob — Teaching Assistant
+0 upvotes
+8 days ago
+👍👍
+
+Glad to help, Kazi!
+
+You can actually do everything we did above on your production system without building a temporary table - it'll just be a really long query!
+
+
+
+SELECT 
+    route_num,
+    truck_num,
+    TIMEDIFF(VCR_PRE_TRIP_SUBMIT, VCR_PRE_TRIP_START) AS Start_Diff,
+    TIMEDIFF(VCR_POST_TRIP_SUBMIT, VCR_POST_TRIP_START) AS Post_Diff
+FROM
+(
+   SELECT 
+      route_num, 
+      truck_num, 
+      DATE(event_date) AS date,
+      MAX(CASE WHEN event_type = 'VCR_PRE_TRIP_START' THEN event_time_local ELSE '' END) AS 'VCR_PRE_TRIP_START',
+      MAX(CASE WHEN event_type = 'VCR_PRE_TRIP_SUBMIT' THEN event_time_local ELSE '' END) AS 'VCR_PRE_TRIP_SUBMIT',
+      MAX(CASE WHEN event_type = 'VCR_POST_TRIP_START' THEN event_time_local ELSE '' END) AS 'VCR_POST_TRIP_START',
+      MAX(CASE WHEN event_type = 'VCR_POST_TRIP_SUBMIT' THEN event_time_local ELSE '' END) AS 'VCR_POST_TRIP_SUBMIT'
+   FROM
+   (
+      SELECT 
+         arh.ROUTE_NUM AS route_num, 
+         arh.TRUCK_NUM AS truck_num, 
+         eve.EVENT_TIME_LOCAL AS event_time_local, 
+         eve.EVENT_TYPE AS event_type, 
+         eve.EVENT_DATE AS event_date
+      from ACTIVE_ROUTE_HEADER_HISTORY AS arh
+      inner join EVENT_HISTORY AS eve
+         on arh.PK_ACTIVE_ROUTE_HEADER_ID = eve.XPK_ACTIVE_ROUTE_HEADER_ID
+      where arh.INFOPRO_DIV = '864'
+         and arh.ROUTE_DATE = '2022-03-17'
+         and (eve.EVENT_TYPE ='VCR_PRE_TRIP_START' or event_Type = 'VCR_PRE_TRIP_SUBMIT' or event_Type = 'VCR_Post_TRIP_SUBMIT' or event_Type = 'VCR_Post_TRIP_start')
+         and eve.EVENT_TYPE <> 'GPS'
+         and TRUCK_NUM = '1242'
+      order by arh.ROUTE_NUM
+      limit 100
+   ) AS tempb
+GROUP BY route_num, truck_num, date
+) AS temp;
+You can copy the above and paste it into your production client and run it.
+
+I'm not 100% sure it will work, but give it a try. It won't hurt anything - the worst it can do is throw a syntax error.
+
+Bob
+
+KX
+Kazi
+0 upvotes
+8 days ago
+You actually figured it out! It works and there is no error. I would apply this with a larger selection to further verify the output. Thank you so much!
+
+
+Bob — Teaching Assistant
+0 upvotes
+8 days ago
+You’re welcome! Glad it works!! (But I figured it would - I’ve been doing this for a while 😉.)
+
+Let me know if you need anything else.

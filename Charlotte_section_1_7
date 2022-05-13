@@ -94,9 +94,11 @@ LEFT JOIN BIT_DB_1.customers cust
 ON FEB.orderid=cust.order_id
 WHERE Feb.Quantity>2;
 
+/**
 # Answer
 COUNT(cust.acctnum)	ROUND(AVG(quantity) * price, 2)
 278	                 12.79
+**/
 
 # Now here's an interesting dilemma caused by querying for the number of rows
 # where quantity is > 2. Then numbers are different than those in the queries above
@@ -109,6 +111,8 @@ FROM BIT_DB_1.FebSales
 WHERE quantity > 2
 GROUP BY quantity;
 
+/**
+
 # Output	
 quantity	The_Count
 3	        194
@@ -117,7 +121,9 @@ quantity	The_Count
 6	          3
 7	          1
 Total:	  263
-# The queries above gave a total of 278. What's causing the discrepancy
+
+**/
+# The queries above gave a total of 278. What's causing the discrepancy?
 
 
-ORDER BY count(*) DESC;
+

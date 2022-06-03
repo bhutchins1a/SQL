@@ -14,7 +14,8 @@ each End_date not in the Start_date column
 4) Easiest way to solve this is using common table expressions and window functions
 
 The data below come from querying the table for all values in the Projects table.
-Start dates are highlighted in yellow; end dates are highlighted in orang.
+Start dates are highlighted in yellow; end dates are highlighted in orange. Arrows indicate the
+connection between start date and end date of each project.
 
 From the image, our expected output should contain 11 rows.
 
@@ -22,6 +23,8 @@ From the image, our expected output should contain 11 rows.
 
 
 MySQL will be used in the solution approach.
+
+
 
 Step one: find the Start dates not in the End-date column, and add a row number for ordering purposes:
 ```sql
@@ -32,6 +35,8 @@ FROM Projects
 WHERE Start_date NOT IN (SELECT End_date FROM Projects);
 ```
 
+
+
 Step two: find the End dates not in the Start_date column, and add a row number:
 ```sql
 SELECT
@@ -41,8 +46,13 @@ FROM Projects
 WHERE End_date NOT IN (SELECT Start_date FROM Projects);
 ```
 
+
+
 The above queries give us the starting and ending dates of each project, so let's
 put them together with a common table expression and see whatwe get.
+
+
+
 
 ```sql
 WITH Project_Start_Date AS
@@ -71,3 +81,14 @@ ORDER BY
 DATEDIFF(end_date, start_date),
 start_date;
 ```
+
+
+
+
+And the solution output is correct:
+
+
+
+
+
+![Solution_Output](solution_output.jpg)

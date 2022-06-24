@@ -69,31 +69,36 @@ INSERT INTO superbowls(Date,SB,Winner,Winner_Pts,Loser,Loser_Pts,MVP,Stadium,Cit
 INSERT INTO superbowls(Date,SB,Winner,Winner_Pts,Loser,Loser_Pts,MVP,Stadium,City,State) VALUES ('Jan 14 1968','II (2)','Green Bay Packers',33,'Oakland Raiders',14,'Bart Starr+','Orange Bowl','Miami','Florida');
 INSERT INTO superbowls(Date,SB,Winner,Winner_Pts,Loser,Loser_Pts,MVP,Stadium,City,State) VALUES ('Jan 15 1967','I (1)','Green Bay Packers',35,'Kansas City Chiefs',10,'Bart Starr+','Memorial Coliseum','Los Angeles','California');
 ```
---Display the database
+
+
+A variety of queries into the above data.
+
+```sql
+-- Display the database
 SELECT * FROM superbowls;
 
---Display the winners and their score for each superbowl
+-- Display the winners and their score for each superbowl
 SELECT Winner, Winner_Pts FROM superbowls;
 
---Display the losers and their scores from each superbowl
+-- Display the losers and their scores from each superbowl
 SELECT Loser, Loser_Pts FROM superbowls;
 
---How mnay wins did each team in the superbowl have in descending order?
+-- How mnay wins did each team in the superbowl have in descending order?
 SELECT Winner, Count (*) AS Total_Wins 
     From superbowls 
     GROUP BY Winner
     ORDER BY Total_Wins DESC;
 
---How many loses did each team in the superbowl have in decending order?
+-- How many loses did each team in the superbowl have in decending order?
 SELECT Loser, Count (*) AS Total_Loses
     From superbowls
     GROUP BY Loser
     ORDER BY Total_Loses DESC;
     
---What is the average winning score?
+-- What is the average winning score?
 Select AVG(Winner_Pts) FROM superbowls;
 
---Flag when the New England Patritos won the superbowl
+-- Flag when the New England Patritos won the superbowl
 Select Date, SB, Winner,
     CASE
         WHEN Winner = "New England Patriots" THEN 1
@@ -101,6 +106,7 @@ Select Date, SB, Winner,
     END as "New England Patroits Flag"
 From superbowls;
 
---What games was Tom Brady the MVP when the New England Patriots won?
+-- What games was Tom Brady the MVP when the New England Patriots won?
 SELECT * FROM superbowls
     WHERE MVP = "Tom Brady" AND Winner = "New England Patriots";
+    ```

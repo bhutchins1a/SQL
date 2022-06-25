@@ -3,11 +3,13 @@
 Subqueries and stuff from Charlotte Chaze Course
 These queries are all about getting statistics about customers, products and revenue for varying timeframes
 **/
-
+```
 
 #1. How many sales made in January?
-SELECT COUNT(*) FROM BIT_DB.JanSales; (ans: 9723)
+```sql
+SELECT COUNT(*) FROM BIT_DB.JanSales; ```(ans: 9723)
 
+```sql
 #2. How many of those orders were for an iPhone?
 SELECT COUNT(*) FROM BIT_DB.JanSales WHERE Product = "iPhone"; (ans: 379)
 

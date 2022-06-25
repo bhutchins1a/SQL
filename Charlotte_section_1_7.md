@@ -5,7 +5,7 @@ These queries are all about getting statistics about customers, products and rev
 **/
 ```
 
-#1. How many sales made in January?
+##1. How many sales made in January?
 ```sql
 SELECT COUNT(*) FROM BIT_DB.JanSales; ```(ans: 9723)
 

@@ -1,6 +1,7 @@
+```sql
 /** 
 
-Subqueries and stuff from Charlotte Chaze
+Subqueries and stuff from Charlotte Chaze Course
 These queries are all about getting statistics about customers, products and revenue for varying timeframes
 
 **/
@@ -124,3 +125,5 @@ Total:	  263
 
 **/
 # The queries above gave a total of 278. What's causing the discrepancy?
+# There are multiple column headers in the row data - that's what
+```

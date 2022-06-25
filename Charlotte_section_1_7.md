@@ -108,7 +108,7 @@ COUNT(cust.acctnum)	ROUND(AVG(quantity) * price, 2)
 # Query:
 SELECT 
   quantity, 
-    count(*) as The_Count
+  count(*) as The_Count
 FROM BIT_DB_1.FebSales
 WHERE quantity > 2
 GROUP BY quantity;

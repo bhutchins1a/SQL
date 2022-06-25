@@ -65,9 +65,11 @@ SELECT
     SUM(quantity)*price AS Revenue
 FROM FebSales
 WHERE location = '548 Lincoln St, Seattle, WA 98101';
+/*
 Answer:
 product	SUM(quantity)	Revenue
 ```AA Batteries (4-pack)```	```2```	```7.68```
+*/
 
 
 #7. How many customers ordered more than 2 products at a time in February, and what was the average amount spent for those customers?

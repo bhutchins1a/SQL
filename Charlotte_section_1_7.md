@@ -30,10 +30,7 @@ ORDER BY acctnum;
 ```
 
 
-## 4. Which product was the cheapest one sold in January, and what was the price? For this one, you are going to 
-## use the commands distinct and MIN(). Using 'SELECT distinct' will remove duplicate rows from your results. 
-## The MIN() command will allow you to select the smallest value from the price column. 
-## This is a hard one - see if you can do it, but don't be afraid to look at the hint or answer if you need to!
+## 4. Which product was the cheapest one sold in January, and what was the price? For this one, you are going to use the commands distinct and MIN(). Using 'SELECT distinct' will remove duplicate rows from your results. The MIN() command will allow you to select the smallest value from the price column. This is a hard one - see if you can do it, but don't be afraid to look at the hint or answer if you need to!
 ```sql
 -- First method uses subquery:
 SELECT 

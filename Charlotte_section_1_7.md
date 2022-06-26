@@ -1,6 +1,6 @@
 
 # Several query topics from Charlotte Chaze Course
-These queries are all about getting statistics about customers, products and revenue for varying timeframes
+These queries are directed at getting statistics about customers, products and revenue for varying timeframes
 
 
 

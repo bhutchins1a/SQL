@@ -1,5 +1,5 @@
 
-# Several query topics from Charlotte Chaze Course
+## Several query topics from Charlotte Chaze Course
 These queries are directed at getting statistics about customers, products and revenue for varying timeframes
 
 
@@ -17,7 +17,7 @@ SELECT COUNT(*) FROM BIT_DB.JanSales WHERE Product = "iPhone";
 ```
 
 
-# 3. Select the customer account numbers for all the orders that were placed in February.
+## 3. Select the customer account numbers for all the orders that were placed in February.
 ```sql
 SELECT 
     acctnum AS Account_Number,
@@ -30,10 +30,10 @@ ORDER BY acctnum;
 ```
 
 
-# 4. Which product was the cheapest one sold in January, and what was the price? For this one, you are going to 
-# use the commands distinct and MIN(). Using 'SELECT distinct' will remove duplicate rows from your results. 
-# The MIN() command will allow you to select the smallest value from the price column. 
-# This is a hard one - see if you can do it, but don't be afraid to look at the hint or answer if you need to!
+## 4. Which product was the cheapest one sold in January, and what was the price? For this one, you are going to 
+## use the commands distinct and MIN(). Using 'SELECT distinct' will remove duplicate rows from your results. 
+## The MIN() command will allow you to select the smallest value from the price column. 
+## This is a hard one - see if you can do it, but don't be afraid to look at the hint or answer if you need to!
 ```sql
 -- First method uses subquery:
 SELECT 
@@ -58,7 +58,7 @@ ORDER BY MIN(price)
 LIMIT 1;
 ```
 
-# 5. What is the total revenue for each product sold in January? (Revenue can be calculated using the number of products sold and the price of the products).
+## 5. What is the total revenue for each product sold in January? (Revenue can be calculated using the number of products sold and the price of the products).
 ```sql
 SELECT 
   product, 
@@ -68,7 +68,7 @@ GROUP BY product
 ORDER BY Total_Revenue DESC;
 ```
 
-# 6. Which products were sold in February at 548 Lincoln St, Seattle, WA 98101, how many of each were sold, and what was the total revenue?
+## 6. Which products were sold in February at 548 Lincoln St, Seattle, WA 98101, how many of each were sold, and what was the total revenue?
 ```sql
 SELECT
     product,
@@ -83,8 +83,8 @@ product	SUM(quantity)	Revenue
 */
 ```
 
-# 7. How many customers ordered more than 2 products at a time in February, and what was the average amount spent for those customers?
-# Bob's Answer:
+## 7. How many customers ordered more than 2 products at a time in February, and what was the average amount spent for those customers?
+## Bob's Answer:
 ```sql
 SELECT COUNT(acctnum), ROUND(AVG(revenue), 2) 
 FROM 
@@ -103,7 +103,7 @@ WHERE quantity > 2) temp;
 -- 278	                  13.83
 */
 ```
-# Charlott's Answer:
+## Charlotte's Answer:
 ```sql
 SELECT 
 COUNT(cust.acctnum), 
@@ -119,10 +119,10 @@ COUNT(cust.acctnum)	ROUND(AVG(quantity) * price, 2)
 278	                 12.79
 **/
 ```
-# Now here's an interesting dilemma caused by querying for the number of rows
-# where quantity is > 2. Then numbers are different than those in the queries above
-# and it is difficult to determine why.
-# Query:
+## Now here's an interesting dilemma caused by querying for the number of rows
+## where quantity is > 2. Then numbers are different than those in the queries above
+## and it is difficult to determine why.
+## Query:
 ```sql
 SELECT 
   quantity, 
@@ -141,5 +141,5 @@ quantity	The_Count
 Total:	  263
 **/
 ```
-# The queries above gave a total of 278. What's causing the discrepancy?
-# There are multiple column headers in the row data - that's what
+## The queries above gave a total of 278. What's causing the discrepancy?
+## There are multiple column headers in the row data - that's what

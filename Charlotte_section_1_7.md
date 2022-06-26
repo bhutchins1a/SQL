@@ -13,8 +13,8 @@ SELECT COUNT(*) FROM BIT_DB.JanSales;
 ## 2. How many of those orders were for an iPhone?
 ```sql
 SELECT COUNT(*) FROM BIT_DB.JanSales WHERE Product = "iPhone"; 
-```
 (ans: 379)
+```
 
 
 # 3. Select the customer account numbers for all the orders that were placed in February.
